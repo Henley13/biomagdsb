@@ -6,7 +6,6 @@ config.gpu_options.allow_growth = True
 session = tensorflow.Session(config=config)
 
 
-import os
 import os.path
 import mask_rcnn_additional
 import kutils
@@ -16,8 +15,8 @@ import sys
 import os
 import skimage.morphology
 import json
-import utils
-import visualize
+import matplotlib
+matplotlib.use('TkAgg')
 
 
 class Segmentation:
@@ -127,11 +126,6 @@ class Segmentation:
         return kutils.MergeMasks(masks), masks, scores
 
 
-
-
-
-
-
 print("Usage: " + sys.argv[0] + " settings.json")
 
 inputDir = ""
@@ -177,14 +171,12 @@ if "show" in params:
 if "detection_max_instances" in params:
     maxDetNum=int(params["detection_max_instances"])
 
-
 imagesDir = os.path.join(inputDir,"images")
 imageFiles = [f for f in os.listdir(imagesDir) if os.path.isfile(os.path.join(imagesDir, f))]
 
 method = Segmentation(pModelPath=modelPath, pConfidence=confidence, pNMSThreshold=nmsThresh, pMaxDetNum=maxDetNum)
 
-
-#parsing scale file if present
+# parsing scale file if present
 scales = {}
 if scaleFilePath is not None:
     scaleFile = open(scaleFilePath, "r")
@@ -205,7 +197,7 @@ else:
             else:
                 print("Missing scaling entry for", baseName, ", skipping")
 
-    #sorting scales
+    # sorting scales
     import operator
     scales = sorted(scales.items(), key=operator.itemgetter(1))
     imageFiles = []
@@ -224,6 +216,8 @@ for index, imageFile in enumerate(imageFiles):
 
     baseName = os.path.splitext(os.path.basename(imageFile))[0]
     imagePath = os.path.join(imagesDir, imageFile)
+    if ".DS_Store" in imagePath:
+        continue
     image = skimage.io.imread(imagePath)
 
     dilationStruct = None
@@ -240,10 +234,11 @@ for index, imageFile in enumerate(imageFiles):
 
     count = masks.shape[2]
     print("  Nuclei (including cropped):", str(count))
-    if count < 1:
-        continue
 
     skimage.io.imsave(os.path.join(outputDir, baseName + ".tiff"), mask)
+
+    if count < 1:
+        continue
 
     if separate:
         masksDir = os.path.join(outputDir, baseName, "masks")
@@ -257,13 +252,3 @@ for index, imageFile in enumerate(imageFiles):
         for s in range(count):
             scoreFile.write(str(s+1) + "\t" + str(scores[s])+ "\r\n")
         scoreFile.close()
-
-    if showOutputs:
-        visualize.display_instances(image=image,
-                                    boxes=utils.extract_bboxes(masks),
-                                    masks=masks,
-                                    scores=scores,
-                                    title=baseName,
-                                    class_ids=numpy.array([1 for _ in range(count)]),
-                                    class_names=["BG", "nucleus"]
-                                    )

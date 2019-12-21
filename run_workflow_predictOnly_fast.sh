@@ -37,8 +37,8 @@ cp "$IMAGES_DIR/"*.* "$OUTPUTS_DIR/images"
 echo "COPYING DONE"
 
 # create dummy folders expected by unet prediction (are unused)
-mkdir -p "$MASS_TRAIN_UNET/images"
-mkdir -p "$UNET_OUT"
+# mkdir -p "$MASS_TRAIN_UNET/images"
+# mkdir -p "$UNET_OUT"
 
 # run prediction only --- from run_workflow.sh ---
 
